@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Amazon Seller Scraper</title>
+</head>
+
+<body>
+
+    <h2>Amazon Seller Lead Scraper</h2>
+
+    <input id="keyword" placeholder="Enter product name" />
+    <button onclick="search()">Search</button>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Seller</th>
+                <th>Business</th>
+                <th>Address</th>
+            </tr>
+        </thead>
+
+        <tbody id="results"></tbody>
+
+    </table>
+
+    <script>
+
+        async function search() {
+
+            const keyword = document.getElementById("keyword").value;
+
+            const res = await fetch(`http://localhost:5000/api/scrape?keyword=${keyword}`);
+
+            const data = await res.json();
+
+            const table = document.getElementById("results");
+
+            table.innerHTML = "";
+
+            data.forEach(item => {
+
+                table.innerHTML += `
+<tr>
+<td>${item.product}</td>
+<td>${item.sellerName}</td>
+<td>${item.businessName}</td>
+<td>${item.address}</td>
+</tr>
+`;
+
+            });
+
+        }
+
+    </script>
+
+</body>
+
+</html>
