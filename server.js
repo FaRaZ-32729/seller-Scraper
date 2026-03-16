@@ -2,9 +2,11 @@ const express = require("express");
 const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
-
 const scrapeRoute = require("./src/routes/scrapeRoute");
+const dbConnection = require("./src/config/DB_Connection");
 
+
+dbConnection();
 const app = express();
 
 app.use(cors());
