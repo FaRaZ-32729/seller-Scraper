@@ -30,64 +30,83 @@ const amazonLeadSchema = new mongoose.Schema({
 
   businessName: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
 
   businessType: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
 
   tradeRegisterNumber: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
 
   vatNumber: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
 
   phoneNumber: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
+  },
+
+  email: {
+    type: String,
+    trim: true,
+    lowercase: true,
+    default: null
   },
 
   address: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
 
   postcode: {
     type: String,
     trim: true,
-    uppercase: true
+    uppercase: true,
+    default: null
   },
 
   city: {
     type: String,
-    trim: true
+    trim: true,
+    default: null
   },
 
   country: {
     type: String,
-    default: "UK"
+    default: null
   },
 
   sellerRating: {
-    type: String
+    type: String,
+    default: null
   },
 
   ratingPercentage: {
-    type: String
+    type: String,
+    default: null
   },
 
   totalRatings: {
-    type: Number
+    type: String,
+    default: null
   },
 
   productUrl: {
-    type: String
+    type: String,
+    default: null
   }
 
 }, {
