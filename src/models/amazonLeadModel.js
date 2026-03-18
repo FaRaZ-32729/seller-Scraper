@@ -2,6 +2,7 @@
 
 // const amazonLeadSchema = new mongoose.Schema({
 
+//   // ── Core identity ──────────────────────────────────────
 //   sellerId: {
 //     type: String,
 //     required: true,
@@ -17,7 +18,6 @@
 
 //   sellerLink: {
 //     type: String,
-//     required: true,
 //     unique: true,
 //     trim: true
 //   },
@@ -28,6 +28,7 @@
 //     default: "Unknown"
 //   },
 
+//   // ── Business info ──────────────────────────────────────
 //   businessName: {
 //     type: String,
 //     trim: true,
@@ -52,6 +53,7 @@
 //     default: null
 //   },
 
+//   // ── Contact ────────────────────────────────────────────
 //   phoneNumber: {
 //     type: String,
 //     trim: true,
@@ -65,6 +67,7 @@
 //     default: null
 //   },
 
+//   // ── Location ───────────────────────────────────────────
 //   address: {
 //     type: String,
 //     trim: true,
@@ -86,9 +89,10 @@
 
 //   country: {
 //     type: String,
-//     default: null
+//     default: "UK"
 //   },
 
+//   // ── Ratings ────────────────────────────────────────────
 //   sellerRating: {
 //     type: String,
 //     default: null
@@ -107,10 +111,40 @@
 //   productUrl: {
 //     type: String,
 //     default: null
+//   },
+
+//   // ── Companies House verification ───────────────────────
+//   ownerName: {
+//     type: String,
+//     trim: true,
+//     default: null
+//   },
+
+//   ownerRole: {
+//     type: String,
+//     trim: true,
+//     default: null   // Director, Secretary, etc.
+//   },
+
+//   companyNumber: {
+//     type: String,
+//     trim: true,
+//     default: null   // Companies House company number
+//   },
+
+//   companiesHouseUrl: {
+//     type: String,
+//     trim: true,
+//     default: null
+//   },
+
+//   verifiedAt: {
+//     type: Date,
+//     default: null   // null = not yet verified
 //   }
 
 // }, {
-//   timestamps: true
+//   timestamps: true  // adds createdAt + updatedAt automatically
 // });
 
 // module.exports = mongoose.model("AmazonLead", amazonLeadSchema);

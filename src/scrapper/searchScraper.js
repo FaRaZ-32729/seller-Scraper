@@ -1,20 +1,19 @@
 // const { getRandomAgent } = require("../utils/browserManager");
 
-// const MAX_PAGES = 5;
-
-// module.exports = async function searchProducts(page, keyword) {
+// // maxPages is now passed in from the route — default 3
+// module.exports = async function searchProducts(page, keyword, maxPages = 3) {
 
 //   const allLinks = new Set();
 
 //   await page.setUserAgent(getRandomAgent());
 
-//   console.log("Searching Amazon UK for:", keyword);
+//   console.log(`Searching Amazon UK — keyword: "${keyword}", pages: ${maxPages}`);
 
-//   for (let pageNum = 1; pageNum <= MAX_PAGES; pageNum++) {
+//   for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
 
 //     const url = `https://www.amazon.co.uk/s?k=${encodeURIComponent(keyword)}&page=${pageNum}`;
 
-//     console.log(`Opening search page ${pageNum}:`, url);
+//     console.log(`Opening search page ${pageNum}/${maxPages}:`, url);
 
 //     const loaded = await safeGoto(page, url);
 
@@ -28,17 +27,10 @@
 //     const hasCaptcha = await page.$('form[action="/errors/validateCaptcha"]');
 
 //     if (hasCaptcha) {
-//       console.log("CAPTCHA hit on search page — waiting 45 seconds");
+//       console.log("CAPTCHA hit — waiting 45 seconds then retrying");
 //       await randomDelay(45000, 50000);
-//       pageNum--; // retry same page
+//       pageNum--;
 //       continue;
-//     }
-
-//     // check if Amazon returned no results / redirected us away
-//     const noResults = await page.$(".s-no-outline");
-
-//     if (!noResults) {
-//       console.log(`Page ${pageNum} looks empty or invalid`);
 //     }
 
 //     await autoScroll(page);
@@ -51,13 +43,10 @@
 
 //         if (!el.href) return;
 
-//         // strip query params and fragment
 //         const url = new URL(el.href);
 //         const clean = url.origin + url.pathname;
 
-//         if (clean.includes("/dp/")) {
-//           found.add(clean);
-//         }
+//         if (clean.includes("/dp/")) found.add(clean);
 
 //       });
 
@@ -65,16 +54,15 @@
 
 //     });
 
-//     console.log(`Found ${links.length} products on page ${pageNum}`);
+//     console.log(`Page ${pageNum}: found ${links.length} products`);
 
 //     links.forEach(l => allLinks.add(l));
 
-//     // don't hammer pages back to back
 //     await randomDelay(2000, 4000);
 
 //   }
 
-//   console.log("Total unique products found:", allLinks.size);
+//   console.log("Total unique products collected:", allLinks.size);
 
 //   return [...allLinks];
 
@@ -88,20 +76,13 @@
 
 //     try {
 
-//       await page.goto(url, {
-//         waitUntil: "domcontentloaded",
-//         timeout: 60000
-//       });
-
+//       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
 //       return true;
 
 //     } catch (err) {
 
 //       console.log(`Navigation failed (attempt ${attempt}):`, err.message);
-
-//       if (attempt < retries) {
-//         await randomDelay(3000, 6000);
-//       }
+//       if (attempt < retries) await randomDelay(3000, 6000);
 
 //     }
 
@@ -120,17 +101,17 @@
 //       let scrolled = 0;
 //       const step = 250;
 
-//       const interval = setInterval(() => {
+//       const timer = setInterval(() => {
 
 //         window.scrollBy(0, step);
 //         scrolled += step;
 
 //         if (scrolled >= document.body.scrollHeight) {
-//           clearInterval(interval);
+//           clearInterval(timer);
 //           resolve();
 //         }
 
-//       }, 150 + Math.random() * 100);
+//       }, 150 + Math.floor(Math.random() * 100));
 
 //     });
 
@@ -146,20 +127,36 @@
 
 const { getRandomAgent } = require("../utils/browserManager");
 
-// maxPages is now passed in from the route — default 3
-module.exports = async function searchProducts(page, keyword, maxPages = 3) {
+// ─────────────────────────────────────────────────────────
+// searchProducts(page, keyword, maxPages, skipPages)
+//
+// skipPages — how many pages to skip before starting
+// maxPages  — how many pages to actually scrape after skipping
+//
+// Examples:
+//   skipPages=0, maxPages=5  → scrapes pages 1–5
+//   skipPages=5, maxPages=2  → scrapes pages 6–7
+//   skipPages=7, maxPages=3  → scrapes pages 8–10
+// ─────────────────────────────────────────────────────────
+
+module.exports = async function searchProducts(page, keyword, maxPages = 3, skipPages = 0) {
 
   const allLinks = new Set();
+  const startPage = skipPages + 1;
+  const endPage = skipPages + maxPages;
 
   await page.setUserAgent(getRandomAgent());
 
-  console.log(`Searching Amazon UK — keyword: "${keyword}", pages: ${maxPages}`);
+  console.log(
+    `Searching Amazon UK — keyword: "${keyword}" | ` +
+    `pages: ${startPage}–${endPage} (skip: ${skipPages}, scrape: ${maxPages})`
+  );
 
-  for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+  for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
 
     const url = `https://www.amazon.co.uk/s?k=${encodeURIComponent(keyword)}&page=${pageNum}`;
 
-    console.log(`Opening search page ${pageNum}/${maxPages}:`, url);
+    console.log(`Opening search page ${pageNum} (${pageNum - skipPages}/${maxPages}):`, url);
 
     const loaded = await safeGoto(page, url);
 
@@ -175,7 +172,7 @@ module.exports = async function searchProducts(page, keyword, maxPages = 3) {
     if (hasCaptcha) {
       console.log("CAPTCHA hit — waiting 45 seconds then retrying");
       await randomDelay(45000, 50000);
-      pageNum--;
+      pageNum--;   // retry same page
       continue;
     }
 
@@ -221,15 +218,11 @@ async function safeGoto(page, url, retries = 2) {
   for (let attempt = 1; attempt <= retries; attempt++) {
 
     try {
-
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
       return true;
-
     } catch (err) {
-
       console.log(`Navigation failed (attempt ${attempt}):`, err.message);
       if (attempt < retries) await randomDelay(3000, 6000);
-
     }
 
   }

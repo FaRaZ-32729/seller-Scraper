@@ -1,6 +1,6 @@
-const { launchBrowser }       = require("../utils/browserManager");
-const scrapeCompanyOfficer    = require("../scrapper/companiesHouseScraper");
-const AmazonLead              = require("../models/amazonLeadModel");
+const { launchBrowser } = require("../utils/browserManager");
+const scrapeCompanyOfficer = require("../scrapper/companiesHouseScraper");
+const AmazonLead = require("../models/amazonLeadModel");
 
 // ─────────────────────────────────────────────────────────
 // Controller: verifyLead
@@ -31,13 +31,13 @@ async function verifyLead(req, res) {
     console.log("Verifying lead:", searchName);
 
     const browser = await launchBrowser();
-    const page    = await browser.newPage();
+    const page = await browser.newPage();
 
     let result = null;
 
     try {
 
-      result = await scrapeCompanyOfficer(page, searchName);
+      result = await scrapeCompanyOfficer(page, searchName, lead.address);
 
     } finally {
 
@@ -50,11 +50,14 @@ async function verifyLead(req, res) {
     }
 
     // save back to the lead document
-    lead.ownerName        = result.ownerName;
-    lead.ownerRole        = result.ownerRole;
-    lead.companyNumber    = result.companyNumber;
-    lead.companiesHouseUrl= result.companiesHouseUrl;
-    lead.verifiedAt       = new Date();
+    lead.ownerName = result.ownerName;
+    lead.ownerRole = result.ownerRole;
+    lead.companyNumber = result.companyNumber;
+    lead.companiesHouseUrl = result.companiesHouseUrl;
+    lead.registeredAddress = result.registeredAddress;
+    lead.addressMatch = result.addressMatch;
+    lead.addressMatchReason = result.addressMatchReason;
+    lead.verifiedAt = new Date();
 
     await lead.save();
 
@@ -62,10 +65,10 @@ async function verifyLead(req, res) {
 
     return res.json({
       success: true,
-      leadId:  id,
-      ownerName:         result.ownerName,
-      ownerRole:         result.ownerRole,
-      companyNumber:     result.companyNumber,
+      leadId: id,
+      ownerName: result.ownerName,
+      ownerRole: result.ownerRole,
+      companyNumber: result.companyNumber,
       companiesHouseUrl: result.companiesHouseUrl
     });
 
@@ -89,9 +92,9 @@ async function verifyLead(req, res) {
 async function verifyAllLeads(req, res) {
 
   // SSE headers
-  res.setHeader("Content-Type",      "text/event-stream");
-  res.setHeader("Cache-Control",     "no-cache");
-  res.setHeader("Connection",        "keep-alive");
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders();
 
@@ -111,7 +114,7 @@ async function verifyAllLeads(req, res) {
         { ownerName: null },
         { ownerName: { $exists: false } }
       ]
-    }).select("_id businessName sellerName").lean();
+    }).select("_id businessName sellerName address").lean();
 
     send("total", { count: unverified.length });
 
@@ -128,34 +131,37 @@ async function verifyAllLeads(req, res) {
     const page = await browser.newPage();
 
     let verified = 0;
-    let failed   = 0;
+    let failed = 0;
 
     for (let i = 0; i < unverified.length; i++) {
 
-      const lead       = unverified[i];
+      const lead = unverified[i];
       const searchName = lead.businessName || lead.sellerName;
 
       send("progress", { index: i + 1, total: unverified.length, name: searchName });
 
       try {
 
-        const result = await scrapeCompanyOfficer(page, searchName);
+        const result = await scrapeCompanyOfficer(page, searchName, lead.address);
 
         if (result) {
 
           await AmazonLead.findByIdAndUpdate(lead._id, {
-            ownerName:         result.ownerName,
-            ownerRole:         result.ownerRole,
-            companyNumber:     result.companyNumber,
+            ownerName: result.ownerName,
+            ownerRole: result.ownerRole,
+            companyNumber: result.companyNumber,
             companiesHouseUrl: result.companiesHouseUrl,
-            verifiedAt:        new Date()
+            registeredAddress: result.registeredAddress,
+            addressMatch: result.addressMatch,
+            addressMatchReason: result.addressMatchReason,
+            verifiedAt: new Date()
           });
 
           verified++;
 
           send("verified", {
-            leadId:    lead._id,
-            name:      searchName,
+            leadId: lead._id,
+            name: searchName,
             ownerName: result.ownerName,
             ownerRole: result.ownerRole
           });
